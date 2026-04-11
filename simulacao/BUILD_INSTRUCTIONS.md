@@ -75,7 +75,7 @@ This ensures `arduino-cli compile` finds the correct top-level sketch file.
 Replace the FQBN with the correct board for your ESP32 variant if needed.
 
 ```bash
-arduino-cli compile --fqbn esp32:esp32:esp32 /home/gabriel/PI5/PI-V-SGHI-Automacao-Hidrica/simulacao --output-dir /home/gabriel/PI5/PI-V-SGHI-Automacao-Hidrica/simulacao/build
+arduino-cli compile --fqbn esp32:esp32:esp32 /home/{your_user}/PI5/PI-V-SGHI-Automacao-Hidrica/simulacao --output-dir /home/{your_user}/PI5/PI-V-SGHI-Automacao-Hidrica/simulacao/build
 ```
 
 After successful compilation you should find `.bin` and `.elf` files under the `build` directory.
@@ -83,8 +83,8 @@ After successful compilation you should find `.bin` and `.elf` files under the `
 ## 6) Locate produced artifacts
 
 ```bash
-ls -R /home/gabriel/PI5/PI-V-SGHI-Automacao-Hidrica/simulacao/build
-find /home/gabriel/PI5/PI-V-SGHI-Automacao-Hidrica/simulacao/build -type f -name "*.bin" -o -name "*.elf" -o -name "*.hex"
+ls -R /home/{your_user}/PI5/PI-V-SGHI-Automacao-Hidrica/simulacao/build
+find /home/{your_user}/PI5/PI-V-SGHI-Automacao-Hidrica/simulacao/build -type f -name "*.bin" -o -name "*.elf" -o -name "*.hex"
 ```
 
 ESP32 builds normally produce `.bin` and `.elf`. A `.hex` file is not required for flashing an ESP32.
@@ -93,7 +93,7 @@ ESP32 builds normally produce `.bin` and `.elf`. A `.hex` file is not required f
 
 ```bash
 # locate the .elf produced by the previous step then:
-xtensa-esp32-elf-objcopy -O ihex /path/to/sketch.elf /home/gabriel/PI5/PI-V-SGHI-Automacao-Hidrica/simulacao/build/sketch.hex
+xtensa-esp32-elf-objcopy -O ihex /path/to/sketch.elf /home/{your_user}/PI5/PI-V-SGHI-Automacao-Hidrica/simulacao/build/sketch.hex
 ```
 
 If `xtensa-esp32-elf-objcopy` is not on your PATH, it is usually available inside the ESP32 toolchain installed by `arduino-cli` (look under `~/.arduino15/packages/esp32/`).
@@ -103,7 +103,7 @@ If `xtensa-esp32-elf-objcopy` is not on your PATH, it is usually available insid
 Using `arduino-cli` (replace the port and fqbn as required):
 
 ```bash
-arduino-cli upload -p /dev/ttyUSB0 --fqbn esp32:esp32:esp32 /home/gabriel/PI5/PI-V-SGHI-Automacao-Hidrica/simulacao
+arduino-cli upload -p /dev/ttyUSB0 --fqbn esp32:esp32:esp32 /home/{your_user}/PI5/PI-V-SGHI-Automacao-Hidrica/simulacao
 ```
 
 Or use `esptool.py` with the produced `.bin` files (for advanced/partial flashing scenarios).
