@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "author": "Isabele, Gabriel",
+  "author": "Izabelle Rodrigues de Oliveira , Gabriel Kaique de Areal Rodrigues ",
   "editor": "wokwi",
   "parts": [
     {
@@ -19,7 +19,7 @@
       "id": "servo1",
       "top": -165.2,
       "left": 470.4,
-      "attrs": { "horn": "double", "hornColor": "black" }
+      "attrs": { "hornColor": "purple" }
     }
   ],
   "connections": [
@@ -32,6 +32,11 @@
     [ "esp:3V3", "pot1:VCC", "red", [ "h-67.05", "v-67.2", "h116" ] ],
     [ "bb2:tn.2", "esp:GND.2", "black", [ "h0" ] ],
     [ "bb2:tn.1", "pot1:GND", "black", [ "v-180.8", "h-134.3", "v105.6", "h38.4" ] ],
+    [ "relay1:GND", "bb2:tn.13", "black", [ "h0" ] ],
+    [ "relay1:VCC", "bb2:tp.12", "red", [ "h0" ] ],
+    [ "relay1:COM", "bb2:tp.10", "red", [ "h30", "v-39.8" ] ],
+    [ "servo1:GND", "bb2:tn.8", "black", [ "h-57.6", "v-38.4" ] ],
+    [ "relay1:NO", "servo1:V+", "orange", [ "h0" ] ],
     [ "esp:0", "bb2:16t.a", "", [ "$bb" ] ],
     [ "esp:2", "bb2:17t.a", "", [ "$bb" ] ],
     [ "esp:4", "bb2:15t.a", "", [ "$bb" ] ],
@@ -69,12 +74,7 @@
     [ "esp:GND.3", "bb2:9t.a", "", [ "$bb" ] ],
     [ "esp:D1", "bb2:19t.a", "", [ "$bb" ] ],
     [ "esp:D0", "bb2:20t.a", "", [ "$bb" ] ],
-    [ "esp:CLK", "bb2:21t.a", "", [ "$bb" ] ],
-    [ "relay1:GND", "bb2:tn.13", "black", [ "h0" ] ],
-    [ "relay1:VCC", "bb2:tp.12", "red", [ "h0" ] ],
-    [ "relay1:COM", "bb2:tp.10", "red", [ "h30", "v-39.8" ] ],
-    [ "servo1:GND", "bb2:tn.8", "black", [ "h-57.6", "v-38.4" ] ],
-    [ "relay1:NO", "servo1:V+", "orange", [ "h0" ] ]
+    [ "esp:CLK", "bb2:21t.a", "", [ "$bb" ] ]
   ],
   "dependencies": {}
 }
