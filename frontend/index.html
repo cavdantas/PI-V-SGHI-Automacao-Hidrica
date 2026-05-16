@@ -6,6 +6,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sistema de Gestão Hídrica</title>
     <link rel="stylesheet" href="css/style.css">
+    
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 
 <body>
@@ -13,9 +15,9 @@
         <div class="nav-content">
             <span class="logo">SGH Inteligente</span>
             <ul class="nav-links">
-                <li><a href="#" class="nav-link active" data-target="dashboard">Dashboard</a></li>
-                <li><a href="#" class="nav-link" data-target="sensores">Sensores</a></li>
-                <li><a href="#" class="nav-link" data-target="historico">Histórico</a></li>
+                <li><a href="#" class="active" data-target="dashboard">Dashboard</a></li>
+                <li><a href="#" data-target="sensores">Sensores</a></li>
+                <li><a href="#" data-target="historico">Histórico</a></li>
             </ul>
         </div>
     </nav>
@@ -30,6 +32,13 @@
 
             <section id="alerts-area"></section>
             <section id="sensor-grid" class="grid"></section>
+
+            <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); margin-top: 25px;">
+                <h3 style="color: #6D4C41; margin-bottom: 15px; font-size: 1.1rem; font-weight: bold;">Tendência de Umidade do Solo (Últimas Horas)</h3>
+                <div style="position: relative; height: 300px; width: 100%;">
+                    <canvas id="historicoGrafico"></canvas>
+                </div>
+            </div>
         </section>
 
         <section id="sensores" class="tab-content hidden">
