@@ -1,11 +1,23 @@
 const mqtt = require('mqtt');
 const db = require('./database');
 
-const client = mqtt.connect('mqtt://localhost:1883');
+//mqtt://3.126.43.235:1883 ou mqtt://broker.hivemq.com:1883
+const client = mqtt.connect('mqtt://3.126.43.235:1883',{
+  family: 4,
+  reconnectPeriod: 2000,
+  connectTimeout: 30_000,
+  clientId: 'sghi_backend_' + Math.random().toString(16).slice(2,8),
+});
 
 client.on('connect', () => {
-  console.log('Conectado ao broker MQTT - SGHI');
-  client.subscribe('sghi/sensores');
+  console.log('Conectado ao broker MQTT - SGHI - (IPv4 forced)');
+  client.subscribe('sensor/umidade', (err, granted) => {
+    if (err) {
+      console.error('Erro ao se inscrever no tópico MQTT:', err.message);
+    } else {
+      console.log('Inscrito com sucesso no tópico MQTT:', granted);
+    }
+  });
 });
 
 client.on('message', (topic, message) => {
@@ -42,3 +54,8 @@ client.on('message', (topic, message) => {
 client.on('error', (err) => {
   console.error('Erro MQTT:', err.message);
 });
+
+client.on('reconnect', () => console.log('MQTT reconnecting...'));
+client.on('offline', () => console.log('MQTT offline'));
+client.on('close', () => console.log('MQTT connection closed'));
+client.on('error', (err) => console.error('Erro MQTT:', err && err.message ? err.message : err));

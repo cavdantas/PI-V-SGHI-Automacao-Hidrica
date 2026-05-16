@@ -6,6 +6,7 @@ const app = express();
 app.use(express.json());
 
 const PORT = 3000;
+const MQTT_TOPIC = 'sensor/umidade';
 
 /**
  * ROTA RAIZ
@@ -98,5 +99,5 @@ app.use((req, res) => {
  */
 app.listen(PORT, () => {
   console.log(`SGHI rodando em http://localhost:${PORT}`);
-  console.log(`📡 Aguardando dados no tópico MQTT: sghi/sensores`);
+  console.log(`📡 Aguardando dados no tópico MQTT: ${MQTT_TOPIC}`);
 });

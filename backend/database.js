@@ -13,7 +13,7 @@ db.serialize(() => {
     CREATE TABLE IF NOT EXISTS leituras (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       device_id TEXT NOT NULL,
-      propriedade TEXT NOT NULL,
+      propriedade REAL NOT NULL,
       valor REAL NOT NULL,
       timestamp TEXT NOT NULL
     )
