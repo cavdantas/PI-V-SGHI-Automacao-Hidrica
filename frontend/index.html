@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Gestão Hídrica</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+    <nav class="navbar">
+        <div class="nav-content">
+            <span class="logo">SGH Inteligente</span>
+            <ul class="nav-links">
+                <li><a href="#" class="nav-link active" data-target="dashboard">Dashboard</a></li>
+                <li><a href="#" class="nav-link" data-target="sensores">Sensores</a></li>
+                <li><a href="#" class="nav-link" data-target="historico">Histórico</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <main class="container">
+        
+        <section id="dashboard" class="tab-content">
+            <header class="dashboard-header">
+                <h2>Monitoramento em Tempo Real</h2>
+                <p>Setores Agrícolas - São José dos Campos</p>
+            </header>
+
+            <section id="alerts-area"></section>
+            <section id="sensor-grid" class="grid"></section>
+        </section>
+
+        <section id="sensores" class="tab-content hidden">
+            <header class="dashboard-header">
+                <h2>Gerenciamento de Sensores</h2>
+                <p>Configuração e status dos dispositivos IoT</p>
+            </header>
+            
+            <div id="sensores-table-container"></div>
+        </section>
+
+        <section id="historico" class="tab-content hidden">
+            <header class="dashboard-header">
+                <h2>Histórico de Leituras</h2>
+                <p>Dados consolidados e análise temporal</p>
+            </header>
+            
+            <div id="historico-container"></div>
+        </section>
+
+    </main>
+
+    <script src="js/script.js"></script>
+</body>
+
+</html>
