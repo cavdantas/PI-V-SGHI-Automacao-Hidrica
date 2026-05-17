@@ -33,7 +33,7 @@ void enviarTelemetria(float valorUmidade) {
   getISO8601Timestamp(timestamp);
 
   char msg[128];
-  sprintf(msg, "{\"deviceID\":\"%s\",\"Umidade\":%.2f,\"timestamp\":\"%s\"}", 
+  sprintf(msg, "{\"deviceID\":\"%s\",\"propriedade\":\"Umidade\",\"valor\":%.2f,\"timestamp\":\"%s\"}", 
           deviceName, valorUmidade, timestamp);
 
   Serial.print("Enviando: ");
