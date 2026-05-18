@@ -51,6 +51,10 @@ If you use a custom package index location, adjust the config accordingly.
 
 ```bash
 arduino-cli lib install "PubSubClient"
+arduino-cli lib install "Wifi"
+arduino-cli lib install "NTPClient"
+arduino-cli lib install "WiFiUdp"
+arduino-cli lib install "ESP32Servo"
 # install any other libraries referenced by the sketch
 ```
 
@@ -77,6 +81,7 @@ Replace the FQBN with the correct board for your ESP32 variant if needed.
 ```bash
 arduino-cli compile --fqbn esp32:esp32:esp32 /home/{your_user}/PI5/PI-V-SGHI-Automacao-Hidrica/simulacao --output-dir /home/{your_user}/PI5/PI-V-SGHI-Automacao-Hidrica/simulacao/build
 ```
+Attention to your root path directory. In case of wrong path build will fail.
 
 After successful compilation you should find `.bin` and `.elf` files under the `build` directory.
 

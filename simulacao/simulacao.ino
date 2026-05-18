@@ -2,6 +2,7 @@
 #include <PubSubClient.h>
 #include <NTPClient.h>
 #include <WiFiUdp.h>
+#include <ESP32Servo.h>
 
 // --- Configurações e Pinos ---
 const char* ssid = "Wokwi-GUEST";
@@ -11,12 +12,14 @@ const char* deviceName = "ESP32_Irrigacao_Gabriel"; // Quando mqtt_server == "br
 
 const int PIN_POT = 34;
 const int PIN_RELE = 2;
+const int PIN_SERVO = 13;
 
 // --- Objetos ---
 WiFiClient espClient;
 PubSubClient client(espClient);
 WiFiUDP ntpUDP;
 NTPClient timeClient(ntpUDP, "pool.ntp.org", -10800, 60000);
+Servo servo;
 
 // --- 1. MÓDULO DE TEMPO E COMUNICAÇÃO ---
 
@@ -32,9 +35,9 @@ void enviarTelemetria(float valorUmidade) {
   char timestamp[25];
   getISO8601Timestamp(timestamp);
 
-  char msg[128];
-  sprintf(msg, "{\"deviceID\":\"%s\",\"propriedade\":\"Umidade\",\"valor\":%.2f,\"timestamp\":\"%s\"}", 
-          deviceName, valorUmidade, timestamp);
+  char msg[256];
+  sprintf(msg, "{\"deviceID\":\"%s\",\"propriedade\":\"Umidade\",\"valor\":%.2f,\"status da bomba\":\"%s\",\"timestamp\":\"%s\"}", 
+          deviceName, valorUmidade, digitalRead(PIN_RELE) == HIGH ? "ligada" : "desligada", timestamp);
 
   Serial.print("Enviando: ");
   Serial.println(msg);
@@ -48,14 +51,51 @@ float lerUmidade() {
   return analogRaw / 10.0; // Sua conversão atual
 }
 
+void moverServo(int angulo) {
+  servo.write(angulo);
+  delay(300);
+}
+
 void analisarEAgir(float umidade) {
   // Lógica 1: Controle do Relé (Bomba)
-  if(umidade > 150.0) {
-    digitalWrite(PIN_RELE, HIGH);
-  } else {
-    digitalWrite(PIN_RELE, LOW);
-  }
+  if(!umidade == 0){
 
+    switch ((int)umidade)
+    {
+    case 1 ... 102:
+      digitalWrite(PIN_RELE, HIGH);
+      //Serial.println("Bomba ligada");
+      //Serial.println("Critico");
+      moverServo(90);
+      break;
+    case 103 ... 205:
+      digitalWrite(PIN_RELE, LOW);
+      //Serial.println("Bomba desligada");
+      //Serial.println("Perigo! Solo quase seco");
+      moverServo(0);
+      break;
+    case 206 ... 307:
+      digitalWrite(PIN_RELE, LOW);
+      //Serial.println("Bomba desligada");
+      //Serial.println("Ideal! Solo úmido");
+      moverServo(0);
+      break;
+    case 308 ... 409:
+      digitalWrite(PIN_RELE, LOW);
+      //Serial.println("Bomba desligada");
+      //Serial.println("Muito úmido! Solo saturado");
+      moverServo(0);
+      break;
+    default:
+      break;
+    }
+  }else{
+    digitalWrite(PIN_RELE, HIGH);
+    //Serial.println("Bomba ligada");
+    //Serial.println("Critico");
+    moverServo(90);
+  }
+  
   // Lógica 2: Espaço reservado para o Servo Motor
   // if (umidade < X) { moverServo(90); }
 }
@@ -90,7 +130,10 @@ void setup() {
   
   pinMode(PIN_POT, INPUT);
   pinMode(PIN_RELE, OUTPUT);
-  
+
+  servo.attach(PIN_SERVO);
+  servo.write(0);
+
   client.setServer(mqtt_server, 1883);
 }
 

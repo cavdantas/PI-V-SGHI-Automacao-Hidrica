@@ -25,3 +25,5 @@ Responsáveis: Izabelle Oliveira, Gabriel Rodrigues e Isaque Pereira.
     *Requisito: É necessário estar conectado ao broker destino*
 ### Broker
 > Tendo o Mosquitto Broker instalado em uma máquina Linux, execute o comando "mosquitto_sub -h broker.hivemq.com -t sensor/temperatura" no terminal e verfiquei as publicações sendo recebidas.
+
+## Atenção - Ao clonar o repositório sigas as instruções do arquivo "BUILD_INSTRUCTIONS.md"
