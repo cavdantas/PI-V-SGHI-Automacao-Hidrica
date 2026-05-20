@@ -24,19 +24,19 @@ client.on('message', (topic, message) => {
   try {
     const data = JSON.parse(message.toString());
 
-    const { deviceID, propriedade, valor, timestamp } = data;
+    const { deviceID, propriedade, valor, statusBomba, timestamp } = data;
 
     console.log('Dado recebido (SGHI):', data);
 
-    if (!deviceID || !propriedade || valor === undefined || !timestamp) {
+    if (!deviceID || !propriedade || valor === undefined || !statusBomba || !timestamp) {
       console.warn('Dados incompletos recebidos:', data);
       return;
     }
 
     db.run(
-      `INSERT INTO leituras (device_id, propriedade, valor, timestamp)
-       VALUES (?, ?, ?, ?)`,
-      [deviceID, propriedade, valor, timestamp],
+      `INSERT INTO leituras (device_id, propriedade, valor, statusBomba, timestamp)
+       VALUES (?, ?, ?, ?, ?)`,
+      [deviceID, propriedade, valor, statusBomba, timestamp],
       (err) => {
         if (err) {
           console.error('Erro ao inserir no banco:', err.message);

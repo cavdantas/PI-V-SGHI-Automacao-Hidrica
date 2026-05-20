@@ -1,5 +1,6 @@
 const express = require('express');
 const db = require('./database');
+const LeituraMapper = require('./DTO/leituraMapper');
 require('./mqttClient'); // inicia o MQTT automaticamente
 
 const app = express();
@@ -28,10 +29,13 @@ app.get('/leituras', (req, res) => {
     `SELECT * FROM leituras ORDER BY timestamp DESC`,
     [],
     (err, rows) => {
-      if (err) {
-        return res.status(500).json({ erro: err.message });
-      }
-      res.json(rows);
+      if (err) return res.status(500).json({ erro: err.message });
+      const dtos = (rows || []).map(r => {
+        const dto = LeituraMapper.toDTO(r);
+        dto.valor = LeituraMapper.transformValor(dto.valor);
+        return dto;
+      });
+      res.json(dtos);
     }
   );
 });
