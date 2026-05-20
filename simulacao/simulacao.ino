@@ -36,8 +36,8 @@ void enviarTelemetria(float valorUmidade) {
   getISO8601Timestamp(timestamp);
 
   char msg[256];
-  sprintf(msg, "{\"deviceID\":\"%s\",\"propriedade\":\"Umidade\",\"valor\":%.2f,\"status da bomba\":\"%s\",\"timestamp\":\"%s\"}", 
-          deviceName, valorUmidade, digitalRead(PIN_RELE) == HIGH ? "ligada" : "desligada", timestamp);
+  sprintf(msg, "{\"deviceID\":\"%s\",\"propriedade\":\"Umidade\",\"valor\":%.2f,\"statusBomba\":\"%s\",\"timestamp\":\"%s\"}", 
+          deviceName, valorUmidade, statusBomba(), timestamp);
 
   Serial.print("Enviando: ");
   Serial.println(msg);
@@ -56,6 +56,16 @@ void moverServo(int angulo) {
   delay(300);
 }
 
+bool statusBomba(bool estado) {
+  digitalWrite(PIN_RELE, estado ? HIGH : LOW);
+  return estado;
+}
+
+char* statusBomba() {
+  if (digitalRead(PIN_RELE) == HIGH) return "ligado";
+  else return "desligado";
+}
+
 void analisarEAgir(float umidade) {
   // Lógica 1: Controle do Relé (Bomba)
   if(!umidade == 0){
@@ -63,25 +73,25 @@ void analisarEAgir(float umidade) {
     switch ((int)umidade)
     {
     case 1 ... 102:
-      digitalWrite(PIN_RELE, HIGH);
+      statusBomba(true);
       //Serial.println("Bomba ligada");
       //Serial.println("Critico");
       moverServo(90);
       break;
     case 103 ... 205:
-      digitalWrite(PIN_RELE, LOW);
+      statusBomba(false);
       //Serial.println("Bomba desligada");
       //Serial.println("Perigo! Solo quase seco");
       moverServo(0);
       break;
     case 206 ... 307:
-      digitalWrite(PIN_RELE, LOW);
+      statusBomba(false);
       //Serial.println("Bomba desligada");
       //Serial.println("Ideal! Solo úmido");
       moverServo(0);
       break;
     case 308 ... 409:
-      digitalWrite(PIN_RELE, LOW);
+      statusBomba(false);
       //Serial.println("Bomba desligada");
       //Serial.println("Muito úmido! Solo saturado");
       moverServo(0);
@@ -90,7 +100,7 @@ void analisarEAgir(float umidade) {
       break;
     }
   }else{
-    digitalWrite(PIN_RELE, HIGH);
+    statusBomba(true);
     //Serial.println("Bomba ligada");
     //Serial.println("Critico");
     moverServo(90);
