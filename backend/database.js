@@ -15,6 +15,7 @@ db.serialize(() => {
       device_id TEXT NOT NULL,
       propriedade REAL NOT NULL,
       valor REAL NOT NULL,
+      statusBomba TEXT NOT NULL,
       timestamp TEXT NOT NULL
     )
   `, (err) => {
