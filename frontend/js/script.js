@@ -4,7 +4,7 @@ let umidadeChartInstance = null; // Guarda a instância do gráfico para evitar 
 
 // Estado global para reter os filtros selecionados na tabela e não resetar ao atualizar
 let filtrosTabela = {
-    deviceID: "",
+    device_id: "",
     propriedade: "",
     status: "",
     data:""
@@ -12,34 +12,22 @@ let filtrosTabela = {
 
 // Estado global para reter os filtros selecionados na tabela de histórico
 let filtrosHistorico = {
-    deviceID: "",
+    device_id: "",
     propriedade: "",
     status: "",
     data: ""
 };
 
-// Função que define as cores baseada nas diretrizes visuais do projeto
+// Função que define as cores baseada nas diretrizes visuais do projeto (agora foca no valor numérico)
 function getStatusConfig(item) {
-    const prop = item.propriedade ? item.propriedade.toLowerCase() : '';
-    
-    // Converte o valor para número limpo eliminando o '%' se ele existir
-    const valNumerico = parseFloat(String(item.valor).replace('%', ''));
-    const valTexto = item.valor;
-
-    if (prop.includes("bomba")) {
-        return {
-            label: valTexto,
-            color: valTexto === "Ligada" ? "#2E7D32" : "#D32F2F",
-            isNumeric: false
-        };
-    }
+    const valNumerico = parseFloat(item.valor) || 0;
 
     if (valNumerico <= 20) return { label: "Crítico", color: "#D32F2F", isNumeric: true };
     if (valNumerico <= 40) return { label: "Atenção", color: "#F9A825", isNumeric: true };
     return { label: "Ideal", color: "#2E7D32", isNumeric: true };
 }
 
-// 1. Renderização do Dashboard com Carrossel Horizontal Expandido (Últimos 10 registros do S001)
+// 1. Renderização do Dashboard com Carrossel Horizontal Expandido
 function renderizarDashboard(listaSensores) {
     const grid = document.getElementById('sensor-grid');
     const alertArea = document.getElementById('alerts-area');
@@ -60,16 +48,15 @@ function renderizarDashboard(listaSensores) {
 
     grid.innerHTML = '';
     
-    // Configura o contêiner original para permitir o deslize horizontal suave de vários cards
+    // Configura o contêiner original para permitir o deslize horizontal suave
     grid.style.display = 'flex';
     grid.style.flexWrap = 'nowrap';
     grid.style.overflowX = 'auto';
     grid.style.scrollBehavior = 'smooth';
     grid.style.gap = '20px';
     grid.style.padding = '10px 5px';
-    grid.style.webkitOverflowScrolling = 'touch'; // Rolagem suave em telas de toque
+    grid.style.webkitOverflowScrolling = 'touch';
 
-    // Oculta de forma limpa a barra de rolagem padrão do navegador para não estragar o design
     if (!document.getElementById('estilo-carrossel-grid')) {
         const styleSheet = document.createElement("style");
         styleSheet.id = 'estilo-carrossel-grid';
@@ -79,40 +66,37 @@ function renderizarDashboard(listaSensores) {
     
     if (alertArea) alertArea.innerHTML = '';
 
-    // Filtra para garantir que estamos lidando apenas com o S001
-    const leiturasS001 = listaSensores.filter(sensor => (sensor.deviceID || 'S001') === 'S001');
-    
-    // Define a exibição de até as últimas 10 leituras no carrossel horizontal
+    // Filtra pelo device_id mapeado no novo BD
+    const leiturasS001 = listaSensores.filter(sensor => (sensor.device_id || 'S001') === 'S001');
     const ultimasLeituras = leiturasS001.slice(0, 10); 
-
     const dispositivosComAlerta = new Set();
 
     ultimasLeituras.forEach((sensor, index) => {
         const config = getStatusConfig(sensor);
         const valorLimpo = String(sensor.valor).replace('%', '');
-        const idDispositivo = sensor.deviceID || 'S001';
+        const idDispositivo = sensor.device_id || 'S001';
+        const statusBomba = sensor.statusBomba || 'Desconhecido';
+        const corBomba = statusBomba.toLowerCase() === 'ligada' ? '#2E7D32' : '#D32F2F';
 
         const valNumerico = parseFloat(valorLimpo) || 0;
         const porcentagemBarra = Math.min(Math.max(valNumerico, 0), 100);
 
-        // Formatação do carimbo de data/hora para as etiquetas
         const dataObj = sensor.timestamp ? new Date(sensor.timestamp) : new Date();
         const horaMinuto = dataObj.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
 
-        // Identificadores de tempo dinâmicos
         let labelTempoCard = "Última Leitura";
         if (index === 1) labelTempoCard = "Leitura Anterior";
         if (index === 2) labelTempoCard = "Antepenúltima Leitura";
         if (index > 2)  labelTempoCard = `Histórico às ${horaMinuto}`;
 
-        // Lógica de Alertas Temporários (apenas para a última leitura real)
+        // Lógica de Alertas Temporários
         if (config.label === "Crítico" && alertArea && index === 0) {
             if (!dispositivosComAlerta.has(idDispositivo)) {
                 dispositivosComAlerta.add(idDispositivo);
 
                 const caixaAlerta = document.createElement('div');
                 caixaAlerta.style = "display:block; background:#ffebee; border-left:5px solid #D32F2F; padding:15px; margin-bottom:15px; border-radius:8px; color:#D32F2F; font-size:0.9rem; transition: opacity 0.5s ease;";
-                caixaAlerta.innerHTML = `<strong>⚠️ Alerta:</strong> Irrigação necessária no dispositivo ${idDispositivo}!`;
+                caixaAlerta.innerHTML = `<strong>⚠️ Alerta:</strong> Umidade crítica no dispositivo ${idDispositivo}! Verifique a irrigação.`;
                 
                 alertArea.appendChild(caixaAlerta);
 
@@ -125,19 +109,13 @@ function renderizarDashboard(listaSensores) {
             }
         }
 
-        // Construção do Card Element
         const card = document.createElement('div');
         card.className = 'card';
-        
-        // Mantém a largura confortável de cada card no carrossel horizontal
         card.style.flex = '0 0 320px'; 
         card.style.cursor = 'pointer'; 
         card.style.transition = 'transform 0.25s ease, box-shadow 0.25s ease, opacity 0.25s ease';
-        
-        // Destaca o card mais recente e suaviza os históricos
         card.style.opacity = index === 0 ? "1" : "0.75";
 
-        // Efeitos de Hover
         card.onmouseenter = () => {
             card.style.transform = 'translateY(-5px) scale(1.01)';
             card.style.boxShadow = '0 8px 20px rgba(0,0,0,0.12)';
@@ -149,10 +127,12 @@ function renderizarDashboard(listaSensores) {
             card.style.opacity = index === 0 ? "1" : "0.75"; 
         };
 
-        // EVENTO DE CLIQUE RESTAURADO: Abre o Pop-up com as informações do card clicado
         card.onclick = () => {
             abrirModalDetalhes(sensor, labelTempoCard);
         };
+
+        // Exibição da propriedade (pode vir como número se o tipo do BD for REAL, então convertemos para String amigável)
+        const tipoPropriedade = sensor.propriedade ? String(sensor.propriedade) : 'Umidade';
 
         card.innerHTML = `
             <div class="card-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
@@ -161,29 +141,34 @@ function renderizarDashboard(listaSensores) {
                     ${config.label}
                 </span>
             </div>
-            <h3 style="margin:5px 0; color:#333; font-size:1rem;">${sensor.propriedade || 'Umidade'}</h3>
+            <h3 style="margin:5px 0; color:#333; font-size:1rem;">Medição: ${tipoPropriedade}</h3>
+            
             <div style="font-size:2.5rem; font-weight:bold; color:#2c3e50; margin:10px 0;">
                 ${valorLimpo}${config.isNumeric ? '%' : ''}
             </div>
+            
             ${config.isNumeric ? `
                 <div style="background:#eee; height:8px; border-radius:4px; overflow:hidden;">
                     <div style="width:${porcentagemBarra}%; background:${config.color}; height:100%;"></div>
                 </div>
             ` : ''}
-            <div style="font-size:0.65rem; color:#aaa; margin-top:15px;">
+            
+            <div style="margin-top: 12px; font-size: 0.85rem; color: #555; display: flex; justify-content: space-between;">
+                <span>⚙️ Bomba:</span>
+                <span style="color: ${corBomba}; font-weight: bold;">${statusBomba}</span>
+            </div>
+
+            <div style="font-size:0.65rem; color:#aaa; margin-top:15px; border-top: 1px solid #f0f0f0; padding-top: 8px;">
                 🕒 Sincronizado: ${sensor.timestamp ? new Date(sensor.timestamp).toLocaleTimeString('pt-BR') : new Date().toLocaleTimeString('pt-BR')}
             </div>
         `;
         grid.appendChild(card);
     });
 
-    // Ativa a função de clique e arraste lateral do mouse
     ativarArrastarParaMover(grid);
-
     inicializarGrafico(listaSensores);
 }
 
-// Função Auxiliar: Ativa o arrastar horizontal do carrossel usando o mouse
 function ativarArrastarParaMover(slider) {
     let isDown = false;
     let startX;
@@ -212,21 +197,22 @@ function ativarArrastarParaMover(slider) {
     });
 }
 
-// Função do Pop-up: Monta e gerencia a janela flutuante na tela
+// 2. Função do Pop-up de Detalhes
 function abrirModalDetalhes(sensor, labelTempoCard) {
-    // Remove modais antigos abertos para evitar duplicidade
     const modalExistente = document.getElementById('modal-detalhes-sensor');
     if (modalExistente) modalExistente.remove();
 
     const config = getStatusConfig(sensor);
     const valorLimpo = String(sensor.valor).replace('%', '');
-    const idDispositivo = sensor.deviceID || 'S001';
+    const idDispositivo = sensor.device_id || 'S001';
+    const statusBomba = sensor.statusBomba || 'Desconhecido';
+    const corBomba = statusBomba.toLowerCase() === 'ligada' ? '#2E7D32' : '#D32F2F';
+    const tipoPropriedade = sensor.propriedade ? String(sensor.propriedade) : 'Umidade';
     
     const dataObj = sensor.timestamp ? new Date(sensor.timestamp) : new Date();
     const dataCompleta = dataObj.toLocaleDateString('pt-BR');
     const horaCompleta = dataObj.toLocaleTimeString('pt-BR');
 
-    // Container de fundo escurecido (Overlay)
     const overlay = document.createElement('div');
     overlay.id = 'modal-detalhes-sensor';
     overlay.style = `
@@ -235,7 +221,6 @@ function abrirModalDetalhes(sensor, labelTempoCard) {
         justify-content: center; z-index: 10000; animation: fadeIn 0.2s ease-out;
     `;
 
-    // Painel Central Branco com as informações
     overlay.innerHTML = `
         <div style="background: white; width: 90%; max-width: 500px; border-radius: 12px; 
                     box-shadow: 0 10px 30px rgba(0,0,0,0.25); padding: 25px; 
@@ -253,17 +238,21 @@ function abrirModalDetalhes(sensor, labelTempoCard) {
                 </div>
                 <div style="display: flex; justify-content: space-between; border-bottom: 1px solid #f9f9f9; padding-bottom: 8px;">
                     <span style="color: #777; font-weight: 500;">Tipo de Métrica:</span>
-                    <span style="font-weight: 600; color: #333;">${sensor.propriedade || 'Umidade do Solo'}</span>
+                    <span style="font-weight: 600; color: #333;">${tipoPropriedade}</span>
                 </div>
                 <div style="display: flex; justify-content: space-between; border-bottom: 1px solid #f9f9f9; padding-bottom: 8px; align-items: center;">
                     <span style="color: #777; font-weight: 500;">Valor Coletado:</span>
                     <span style="font-size: 1.3rem; font-weight: bold; color: #2c3e50;">${valorLimpo}${config.isNumeric ? '%' : ''}</span>
                 </div>
                 <div style="display: flex; justify-content: space-between; border-bottom: 1px solid #f9f9f9; padding-bottom: 8px; align-items: center;">
-                    <span style="color: #777; font-weight: 500;">Status da Zona:</span>
+                    <span style="color: #777; font-weight: 500;">Status do Solo:</span>
                     <span style="background:${config.color}22; color:${config.color}; padding:4px 12px; border-radius:12px; font-size:0.75rem; font-weight:bold;">
                         ${config.label}
                     </span>
+                </div>
+                <div style="display: flex; justify-content: space-between; border-bottom: 1px solid #f9f9f9; padding-bottom: 8px;">
+                    <span style="color: #777; font-weight: 500;">Status da Bomba:</span>
+                    <span style="font-weight: bold; color: ${corBomba};">${statusBomba}</span>
                 </div>
                 <div style="display: flex; justify-content: space-between; border-bottom: 1px solid #f9f9f9; padding-bottom: 8px;">
                     <span style="color: #777; font-weight: 500;">Data da Leitura:</span>
@@ -272,12 +261,6 @@ function abrirModalDetalhes(sensor, labelTempoCard) {
                 <div style="display: flex; justify-content: space-between; border-bottom: 1px solid #f9f9f9; padding-bottom: 8px;">
                     <span style="color: #777; font-weight: 500;">Horário de Sincronismo:</span>
                     <span style="color: #555;">${horaCompleta}</span>
-                </div>
-                <div style="display: flex; justify-content: space-between; padding-bottom: 8px;">
-                    <span style="color: #777; font-weight: 500;">Ação Recomendada:</span>
-                    <span style="font-weight: 600; color: ${config.label === 'Crítico' ? '#D32F2F' : '#2E7D32'};">
-                        ${config.label === "Crítico" ? "⚠️ Ativar Linha de Irrigação" : "✅ Sistema Operando Normalmente"}
-                    </span>
                 </div>
             </div>
 
@@ -289,7 +272,6 @@ function abrirModalDetalhes(sensor, labelTempoCard) {
         </div>
     `;
 
-    // Estilos internos de transição CSS para o Pop-up
     const estiloAnimacao = document.createElement('style');
     estiloAnimacao.innerHTML = `
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
@@ -298,7 +280,6 @@ function abrirModalDetalhes(sensor, labelTempoCard) {
     overlay.appendChild(estiloAnimacao);
     document.body.appendChild(overlay);
 
-    // Lógica para fechamento prático da janela
     const fecharModal = () => overlay.remove();
     document.getElementById('fechar-modal-btn').onclick = fecharModal;
     document.getElementById('fechar-modal-btn-sec').onclick = fecharModal;
@@ -307,25 +288,23 @@ function abrirModalDetalhes(sensor, labelTempoCard) {
     };
 }
 
-// 2. Renderização da Tabela Geral de Sensores com Filtros Elegantes e Filtro de Data
+// 3. Renderização da Tabela Geral de Sensores
 function renderizarTabelaSensores(listaSensores) {
     const container = document.getElementById('sensores-table-container');
     if (!container) return;
 
-    // Extração dinâmica de opções únicas para os menus drop-down
-    const IDsUnicos = [...new Set(listaSensores.map(s => s.deviceID || 'S001'))];
-    const propriedadesUnicas = [...new Set(listaSensores.map(s => s.propriedade || 'Umidade'))];
+    const IDsUnicos = [...new Set(listaSensores.map(s => s.device_id || 'S001'))];
+    const propriedadesUnicas = [...new Set(listaSensores.map(s => s.propriedade ? String(s.propriedade) : 'Umidade'))];
     const statusUnicos = [...new Set(listaSensores.map(s => getStatusConfig(s).label))];
 
-    // Aplicação dos filtros cumulativos
     const listaFiltrada = listaSensores.filter(sensor => {
         const config = getStatusConfig(sensor);
+        const propString = sensor.propriedade ? String(sensor.propriedade) : 'Umidade';
         
-        const matchID = filtrosTabela.deviceID === "" || (sensor.deviceID || 'S001') === filtrosTabela.deviceID;
-        const matchProp = filtrosTabela.propriedade === "" || (sensor.propriedade || 'Umidade') === filtrosTabela.propriedade;
+        const matchID = filtrosTabela.device_id === "" || (sensor.device_id || 'S001') === filtrosTabela.device_id;
+        const matchProp = filtrosTabela.propriedade === "" || propString === filtrosTabela.propriedade;
         const matchStatus = filtrosTabela.status === "" || config.label === filtrosTabela.status;
         
-        // Validação da Data (compara o ano-mês-dia do timestamp com o valor do input)
         let matchData = true;
         if (filtrosTabela.data) {
             const dataSensor = sensor.timestamp ? new Date(sensor.timestamp).toISOString().split('T')[0] : new Date().toISOString().split('T')[0];
@@ -335,7 +314,6 @@ function renderizarTabelaSensores(listaSensores) {
         return matchID && matchProp && matchStatus && matchData;
     });
 
-    // Estilo inline comum para os selects de cabeçalho parecerem botões discretos com setas
     const estiloSelectHead = `
         appearance: none; -webkit-appearance: none; -moz-appearance: none;
         background: transparent; border: none; font-size: 0.9rem; font-weight: bold; 
@@ -352,7 +330,7 @@ function renderizarTabelaSensores(listaSensores) {
                             <div style="position: relative; display: inline-block;">
                                 <select id="filtro-id" style="${estiloSelectHead}">
                                     <option value="" style="color:#333; font-weight:normal;">ID do Dispositivo ▼</option>
-                                    ${IDsUnicos.map(id => `<option value="${id}" ${filtrosTabela.deviceID === id ? 'selected' : ''} style="color:#333; font-weight:normal;">${id}</option>`).join('')}
+                                    ${IDsUnicos.map(id => `<option value="${id}" ${filtrosTabela.device_id === id ? 'selected' : ''} style="color:#333; font-weight:normal;">${id}</option>`).join('')}
                                 </select>
                             </div>
                         </th>
@@ -371,15 +349,17 @@ function renderizarTabelaSensores(listaSensores) {
                         <th style="padding: 15px; min-width: 130px; vertical-align: middle;">
                             <div style="position: relative; display: inline-block;">
                                 <select id="filtro-status" style="${estiloSelectHead} color: #333;">
-                                    <option value="" style="color:#333; font-weight:normal;">Status ▼</option>
+                                    <option value="" style="color:#333; font-weight:normal;">Status do Solo ▼</option>
                                     ${statusUnicos.map(st => `<option value="${st}" ${filtrosTabela.status === st ? 'selected' : ''} style="color:#333; font-weight:normal;">${st}</option>`).join('')}
                                 </select>
                             </div>
                         </th>
 
+                        <th style="padding: 15px; color: #333; font-weight: bold; vertical-align: middle;">Status Bomba</th>
+
                         <th style="padding: 15px; min-width: 200px; vertical-align: middle; color: #333; font-weight: bold;">
                             <div style="display: flex; align-items: center; gap: 8px;">
-                                <span>Última Atualização</span>
+                                <span>Data/Hora</span>
                                 <input type="date" id="filtro-data" value="${filtrosTabela.data || ''}" 
                                        style="padding: 2px 6px; border: 1px solid #ccc; border-radius: 4px; font-size: 0.75rem; font-family: inherit; color: #555; cursor: pointer; outline: none;">
                             </div>
@@ -392,7 +372,7 @@ function renderizarTabelaSensores(listaSensores) {
     if (listaFiltrada.length === 0) {
         htmlTabela += `
             <tr>
-                <td colspan="5" style="padding: 30px; text-align: center; color: #888; font-weight: 500;">
+                <td colspan="6" style="padding: 30px; text-align: center; color: #888; font-weight: 500;">
                     🔍 Nenhum registro corresponde aos filtros selecionados.
                 </td>
             </tr>
@@ -402,22 +382,25 @@ function renderizarTabelaSensores(listaSensores) {
             const config = getStatusConfig(sensor);
             const valorLimpo = String(sensor.valor).replace('%', '');
             const valorFormatado = valorLimpo + (config.isNumeric ? '%' : '');
+            const statusBomba = sensor.statusBomba || 'Desconhecido';
+            const corBomba = statusBomba.toLowerCase() === 'ligada' ? '#2E7D32' : '#D32F2F';
+            const tipoPropriedade = sensor.propriedade ? String(sensor.propriedade) : 'Umidade';
             
-            // Exibição amigável de Data e Hora na linha
             const dataObj = sensor.timestamp ? new Date(sensor.timestamp) : new Date();
             const dataFormatada = dataObj.toLocaleDateString('pt-BR');
             const horaFormatada = dataObj.toLocaleTimeString('pt-BR');
 
             htmlTabela += `
                 <tr style="border-bottom: 1px solid #eeeeee;">
-                    <td style="padding: 15px; font-weight: bold; color: #2c3e50;">${sensor.deviceID || 'S001'}</td>
-                    <td style="padding: 15px; color: #555;">${sensor.propriedade || 'Umidade'}</td>
+                    <td style="padding: 15px; font-weight: bold; color: #2c3e50;">${sensor.device_id || 'S001'}</td>
+                    <td style="padding: 15px; color: #555;">${tipoPropriedade}</td>
                     <td style="padding: 15px; font-weight: bold; color: #2c3e50;">${valorFormatado}</td>
                     <td style="padding: 15px;">
                         <span style="background:${config.color}22; color:${config.color}; padding:4px 12px; border-radius:12px; font-size:0.75rem; font-weight:bold; display: inline-block;">
                             ${config.label}
                         </span>
                     </td>
+                    <td style="padding: 15px; font-weight: bold; color: ${corBomba};">${statusBomba}</td>
                     <td style="padding: 15px; color: #666; font-size: 0.85rem;">${dataFormatada} às ${horaFormatada}</td>
                 </tr>
             `;
@@ -427,9 +410,8 @@ function renderizarTabelaSensores(listaSensores) {
     htmlTabela += `</tbody></table></div>`;
     container.innerHTML = htmlTabela;
 
-    // --- EVENT LISTENERS DOS FILTROS ---
     document.getElementById('filtro-id').addEventListener('change', (e) => {
-        filtrosTabela.deviceID = e.target.value;
+        filtrosTabela.device_id = e.target.value;
         renderizarTabelaSensores(listaSensores);
     });
 
@@ -443,42 +425,35 @@ function renderizarTabelaSensores(listaSensores) {
         renderizarTabelaSensores(listaSensores);
     });
 
-    // Novo Event Listener para capturar a data escolhida
     document.getElementById('filtro-data').addEventListener('change', (e) => {
-        filtrosTabela.data = e.target.value; // Retorna "AAAA-MM-DD" ou vazio
+        filtrosTabela.data = e.target.value; 
         renderizarTabelaSensores(listaSensores);
     });
 }
 
-// 3. Renderização da Tabela de Logs Históricos com Filtros Elegantes nos Títulos
+// 4. Renderização da Tabela de Logs Históricos
 function renderizarHistorico(listaHistorico) {
     const container = document.getElementById('historico-container');
     if (!container) return;
 
     const obterCorStatus = (status) => {
-        if (status === "Crítico" || status === "Ligada") return "#D32F2F";
+        if (status === "Crítico") return "#D32F2F";
         if (status === "Atenção") return "#F9A825";
-        if (status === "Ideal" || status === "Desligada") return "#2E7D32";
+        if (status === "Ideal") return "#2E7D32";
         return "#555";
     };
 
-    // Extração dinâmica de opções baseadas no histórico de logs recebido
-    const IDsUnicos = [...new Set(listaHistorico.map(log => log.deviceID || 'S001'))];
-    const propriedadesUnicas = [...new Set(listaHistorico.map(log => log.propriedade || 'Umidade'))];
-    
-    // Mapeia os status reais para preencher o filtro do histórico
-    const statusUnicos = [...new Set(listaHistorico.map(log => {
-        const configProvisoria = getStatusConfig({ propriedade: log.propriedade, valor: log.valor });
-        return configProvisoria.label;
-    }))];
+    const IDsUnicos = [...new Set(listaHistorico.map(log => log.device_id || 'S001'))];
+    const propriedadesUnicas = [...new Set(listaHistorico.map(log => log.propriedade ? String(log.propriedade) : 'Umidade'))];
+    const statusUnicos = [...new Set(listaHistorico.map(log => getStatusConfig(log).label))];
 
-    // Aplicação dos filtros cumulativos na lista de histórico
     const listaFiltrada = listaHistorico.filter(log => {
-        const configProvisoria = getStatusConfig({ propriedade: log.propriedade, valor: log.valor });
+        const configProvisoria = getStatusConfig(log);
         const statusTexto = configProvisoria.label;
+        const propString = log.propriedade ? String(log.propriedade) : 'Umidade';
 
-        const matchID = filtrosHistorico.deviceID === "" || (log.deviceID || 'S001') === filtrosHistorico.deviceID;
-        const matchProp = filtrosHistorico.propriedade === "" || (log.propriedade || 'Umidade') === filtrosHistorico.propriedade;
+        const matchID = filtrosHistorico.device_id === "" || (log.device_id || 'S001') === filtrosHistorico.device_id;
+        const matchProp = filtrosHistorico.propriedade === "" || propString === filtrosHistorico.propriedade;
         const matchStatus = filtrosHistorico.status === "" || statusTexto === filtrosHistorico.status;
         
         let matchData = true;
@@ -490,7 +465,6 @@ function renderizarHistorico(listaHistorico) {
         return matchID && matchProp && matchStatus && matchData;
     });
 
-    // Estilo comum para camuflar os selects como títulos com setas
     const estiloSelectHead = `
         appearance: none; -webkit-appearance: none; -moz-appearance: none;
         background: transparent; border: none; font-size: 0.9rem; font-weight: bold; 
@@ -515,7 +489,7 @@ function renderizarHistorico(listaHistorico) {
                             <div style="position: relative; display: inline-block;">
                                 <select id="filtro-hist-id" style="${estiloSelectHead} color: #6D4C41;">
                                     <option value="" style="color:#333; font-weight:normal;">Dispositivo ▼</option>
-                                    ${IDsUnicos.map(id => `<option value="${id}" ${filtrosHistorico.deviceID === id ? 'selected' : ''} style="color:#333; font-weight:normal;">${id}</option>`).join('')}
+                                    ${IDsUnicos.map(id => `<option value="${id}" ${filtrosHistorico.device_id === id ? 'selected' : ''} style="color:#333; font-weight:normal;">${id}</option>`).join('')}
                                 </select>
                             </div>
                         </th>
@@ -534,13 +508,13 @@ function renderizarHistorico(listaHistorico) {
                         <th style="padding: 15px; min-width: 130px; vertical-align: middle;">
                             <div style="position: relative; display: inline-block;">
                                 <select id="filtro-hist-status" style="${estiloSelectHead}">
-                                    <option value="" style="color:#333; font-weight:normal;">Status ▼</option>
+                                    <option value="" style="color:#333; font-weight:normal;">Status Solo ▼</option>
                                     ${statusUnicos.map(st => `<option value="${st}" ${filtrosHistorico.status === st ? 'selected' : ''} style="color:#333; font-weight:normal;">${st}</option>`).join('')}
                                 </select>
                             </div>
                         </th>
 
-                        <th style="padding: 15px; color: #333; font-weight: bold; vertical-align: middle;">Ação do Sistema</th>
+                        <th style="padding: 15px; color: #333; font-weight: bold; vertical-align: middle;">Status Bomba</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -556,24 +530,27 @@ function renderizarHistorico(listaHistorico) {
         `;
     } else {
         listaFiltrada.forEach(log => {
-            const configProvisoria = getStatusConfig({ propriedade: log.propriedade, valor: log.valor });
+            const configProvisoria = getStatusConfig(log);
             const statusTexto = configProvisoria.label;
             const corStatus = obterCorStatus(statusTexto);
             const dataFormatada = log.timestamp ? new Date(log.timestamp).toLocaleString('pt-BR') : new Date().toLocaleString('pt-BR');
             const valorLimpo = String(log.valor).replace('%', '');
+            const statusBomba = log.statusBomba || 'Desconhecido';
+            const corBomba = statusBomba.toLowerCase() === 'ligada' ? '#2E7D32' : '#D32F2F';
+            const tipoPropriedade = log.propriedade ? String(log.propriedade) : 'Umidade';
 
             htmlHistorico += `
                 <tr style="border-bottom: 1px solid #eeeeee;">
                     <td style="padding: 15px; color: #666; font-size: 0.85rem;">${dataFormatada}</td>
-                    <td style="padding: 15px; font-weight: bold; color: #2c3e50;">${log.deviceID || 'S001'}</td>
-                    <td style="padding: 15px; color: #555;">${log.propriedade || 'Umidade'}</td>
+                    <td style="padding: 15px; font-weight: bold; color: #2c3e50;">${log.device_id || 'S001'}</td>
+                    <td style="padding: 15px; color: #555;">${tipoPropriedade}</td>
                     <td style="padding: 15px; font-weight: bold; color: #2c3e50;">${valorLimpo}${configProvisoria.isNumeric ? '%' : ''}</td>
                     <td style="padding: 15px;">
                         <span style="background:${corStatus}22; color:${corStatus}; padding:2px 10px; border-radius:12px; font-size:0.7rem; font-weight:bold;">
                             ${statusTexto}
                         </span>
                     </td>
-                    <td style="padding: 15px; color: #5d4037; font-weight: 500;">${statusTexto === "Crítico" ? "Ativar Irrigação" : "Monitorando"}</td>
+                    <td style="padding: 15px; color: ${corBomba}; font-weight: bold;">${statusBomba}</td>
                 </tr>
             `;
         });
@@ -582,9 +559,8 @@ function renderizarHistorico(listaHistorico) {
     htmlHistorico += `</tbody></table></div>`;
     container.innerHTML = htmlHistorico;
 
-    // --- EVENT LISTENERS PARA INTERATIVIDADE ---
     document.getElementById('filtro-hist-id').addEventListener('change', (e) => {
-        filtrosHistorico.deviceID = e.target.value;
+        filtrosHistorico.device_id = e.target.value;
         renderizarHistorico(listaHistorico);
     });
 
@@ -604,14 +580,15 @@ function renderizarHistorico(listaHistorico) {
     });
 }
 
-// 4. Função para renderizar o Gráfico Dinamicamente
+// 5. Função para renderizar o Gráfico
 function inicializarGrafico(listaSensores) {
     const canvas = document.getElementById('historicoGrafico');
     if (!canvas) return;
 
-    const dadosUmidade = listaSensores.filter(s => s.propriedade && s.propriedade.toLowerCase().includes('umidade'));
-    const rotasHoras = dadosUmidade.map(s => s.deviceID ? s.deviceID : 'Sensor');
-    const valoresNumericos = dadosUmidade.map(s => parseFloat(String(s.valor).replace('%', '')));
+    // Filtra dados para o gráfico garantindo que pegue o device_id atualizado
+    const dadosRelevantes = listaSensores.filter(s => true); 
+    const rotasHoras = dadosRelevantes.map(s => s.device_id ? s.device_id : 'Sensor');
+    const valoresNumericos = dadosRelevantes.map(s => parseFloat(String(s.valor).replace('%', '')) || 0);
 
     construirGraficoEfetivo(canvas, rotasHoras, valoresNumericos);
 }
