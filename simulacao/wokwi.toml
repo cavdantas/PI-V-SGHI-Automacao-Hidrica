@@ -1,0 +1,4 @@
+[wokwi]
+version = 1
+firmware = '/build/simulacao.ino.bin'
+elf = 'path-to-your-firmware.elf'
